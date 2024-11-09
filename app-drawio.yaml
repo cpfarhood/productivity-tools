@@ -1,0 +1,92 @@
+## Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: drawio
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-redirect@kubernetescrd
+spec:
+  ingressClassName: traefik-external
+  rules:
+  - host: drawio.farhoodliquor.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name:  drawio
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - requests.farhoodliquor.com
+    secretName: farhoodliquor-com-cert-letsencrypt-prod
+---
+
+## Service
+---
+apiVersion: v1
+kind: Service
+metadata:
+   name: drawio
+   labels:
+     app: drawio
+spec:
+  clusterIP: None
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: drawio
+---
+
+## Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drawio
+spec:
+  selector:
+    matchLabels:
+      app: drawio
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: drawio
+    spec:
+      containers:
+        - name: drawio 
+          image: jgraph/drawio:latest
+          imagePullPolicy: Always
+          env:
+            - name: TZ
+              value: "America/Detroit"
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          ports:
+            - name: "http"
+              containerPort: 8080
+          volumeMounts:
+            - name: homes
+              mountPath: /mnt/nfs/homes
+          readinessProbe:
+            httpGet:
+              path: /
+              port: web
+          livenessProbe:
+            httpGet:
+              path: /
+              port: web
+      - name: homes
+        nfs:
+          path: /mnt/pool0/homes
+          server: truenas.farhoodliquor.dmz
