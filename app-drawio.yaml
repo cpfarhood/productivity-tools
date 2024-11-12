@@ -21,7 +21,7 @@ spec:
               number: 80
   tls:
   - hosts:
-    - requests.farhoodliquor.com
+    - drawio.farhoodliquor.com
     secretName: farhoodliquor-com-cert-letsencrypt-prod
 ---
 
